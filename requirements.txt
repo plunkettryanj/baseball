@@ -1,2 +1,7 @@
-requests
+clickhouse-connect
+dbt-core
+dbt-clickhouse
 pandas
+pybaseball
+pyyaml
+requests
