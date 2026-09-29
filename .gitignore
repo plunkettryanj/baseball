@@ -3,3 +3,5 @@ baseball-env
 local
 key.txt
 secrets.yaml
+.env
+/logs

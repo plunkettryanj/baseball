@@ -1,3 +1,24 @@
+x-airflow-common: &airflow-common
+  build:
+    context: .
+    dockerfile: docker/Dockerfile.airflow
+  image: baseball-airflow:2.10.2
+  environment:
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+    AIRFLOW__WEBSERVER__DEFAULT_UI_TIMEZONE: America/Los_Angeles
+    AIRFLOW__CORE__DEFAULT_TIMEZONE: America/Los_Angeles
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    CH_HOST: clickhouse
+    CH_USER: ${CH_USER}
+    CH_PASSWORD: ${CH_PASSWORD}
+    DBT_PROFILES_DIR: /opt/airflow/repo/dbt/baseball
+    ALERT_EMAIL: ${ALERT_EMAIL}
+  volumes:
+    - ./dags:/opt/airflow/dags
+    - ./logs:/opt/airflow/logs
+    - .:/opt/airflow/repo
+
 services:
   clickhouse:
     image: clickhouse/clickhouse-server:latest
@@ -23,13 +44,10 @@ services:
       - airflow_postgres_data:/var/lib/postgresql/data
 
   airflow-init:
-    image: apache/airflow:2.10.2
+    <<: *airflow-common
     container_name: baseball-airflow-init
     depends_on:
       - postgres
-    environment:
-      AIRFLOW__CORE__EXECUTOR: LocalExecutor
-      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
     entrypoint: /bin/bash
     command:
       - -c
@@ -44,33 +62,22 @@ services:
           --email admin@example.com
 
   airflow-webserver:
-    image: apache/airflow:2.10.2
+    <<: *airflow-common
     container_name: baseball-airflow-webserver
     depends_on:
       - postgres
       - airflow-init
-    environment:
-      AIRFLOW__CORE__EXECUTOR: LocalExecutor
-      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
     ports:
       - "8080:8080"
-    volumes:
-      - ./dags:/opt/airflow/dags
     command: webserver
 
   airflow-scheduler:
-    image: apache/airflow:2.10.2
+    <<: *airflow-common
     container_name: baseball-airflow-scheduler
     depends_on:
       - postgres
       - airflow-init
-    environment:
-      AIRFLOW__CORE__EXECUTOR: LocalExecutor
-      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
-    volumes:
-      - ./dags:/opt/airflow/dags
     command: scheduler
-
 
 volumes:
   clickhouse_data:

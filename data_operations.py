@@ -12,6 +12,7 @@ then owns validating and writing that data into ClickHouse. api_operations
 stays focused purely on talking to the external source.
 """
 
+import os
 import logging
 from datetime import date
 import clickhouse_connect
@@ -63,12 +64,15 @@ def load_secrets(path: str = "secrets.yaml") -> dict:
 
 def get_client(secrets: dict):
     ch = secrets["clickhouse"]
-    logger.debug("Connecting to ClickHouse at %s:%s as %s", ch["host"], ch["port"], ch["user"])
+    host = os.environ.get("CH_HOST", ch["host"])
+    user = os.environ.get("CH_USER", ch["user"])
+    password = os.environ.get("CH_PASSWORD", ch["password"])
+    logger.debug("Connecting to ClickHouse at %s:%s as %s", host, ch["port"], user)
     return clickhouse_connect.get_client(
-        host=ch["host"],
+        host=host,
         port=ch["port"],
-        username=ch["user"],
-        password=ch["password"],
+        username=user,
+        password=password,
         database="raw",
     )
 
