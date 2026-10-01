@@ -44,13 +44,21 @@ jobs:
           sops -d --output secrets.yaml secrets.enc.yaml
           test -s secrets.yaml
           grep -q '^clickhouse:' secrets.yaml && echo "secrets.yaml decrypted OK"
-      
+
+      - name: Debug file paths
+        run: |
+          pwd
+          ls -la docker/clickhouse ddl || true
+          git ls-files | grep -i '\.sql$'
+
       - name: Create databases and raw table
         run: |
           CH="http://localhost:8123/?user=ci_admin&password=ci_password"
-          curl -sf "$CH" --data-binary @docker/clickhouse/init.sql
+          for db in raw staging analytics; do
+            curl -sf "$CH" --data-binary "CREATE DATABASE IF NOT EXISTS $db"
+          done
           curl -sf "$CH" --data-binary @ddl/ddl_raw_statcast_pitches.sql
-
+          
       - name: Create app user from secrets
         run: |
           CH_USER=$(python3 -c "import yaml;print(yaml.safe_load(open('secrets.yaml'))['clickhouse']['user'])")
