@@ -8,7 +8,7 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     services:
       clickhouse:
@@ -27,8 +27,24 @@ jobs:
           --health-retries 12
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
+      - name: Install SOPS
+        run: |
+          curl -fsSL -o sops \
+            https://github.com/getsops/sops/releases/download/v3.10.2/sops-v3.10.2.linux.amd64
+          chmod +x sops
+          sudo mv sops /usr/local/bin/sops
+          sops --version
+
+      - name: Decrypt secrets
+        env:
+          SOPS_AGE_KEY: ${{ secrets.AGE_KEY }}
+        run: |
+          sops -d --output secrets.yaml secrets.enc.yaml
+          test -s secrets.yaml
+          grep -q '^clickhouse:' secrets.yaml && echo "secrets.yaml decrypted OK"
+          
       - name: Smoke test ClickHouse
         run: |
           curl -sf "http://localhost:8123/?user=ci_admin&password=ci_password" \
