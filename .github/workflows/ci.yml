@@ -44,7 +44,30 @@ jobs:
           sops -d --output secrets.yaml secrets.enc.yaml
           test -s secrets.yaml
           grep -q '^clickhouse:' secrets.yaml && echo "secrets.yaml decrypted OK"
-          
+      
+      - name: Create databases and raw table
+        run: |
+          CH="http://localhost:8123/?user=ci_admin&password=ci_password"
+          curl -sf "$CH" --data-binary @docker/clickhouse/init.sql
+          curl -sf "$CH" --data-binary @ddl/ddl_raw_statcast_pitches.sql
+
+      - name: Create app user from secrets
+        run: |
+          CH_USER=$(python3 -c "import yaml;print(yaml.safe_load(open('secrets.yaml'))['clickhouse']['user'])")
+          CH_PASS=$(python3 -c "import yaml;print(yaml.safe_load(open('secrets.yaml'))['clickhouse']['password'])")
+          echo "::add-mask::$CH_PASS"
+          CH="http://localhost:8123/?user=ci_admin&password=ci_password"
+          curl -sf "$CH" --data-binary "CREATE USER IF NOT EXISTS ${CH_USER} IDENTIFIED BY '${CH_PASS}'"
+          curl -sf "$CH" --data-binary "GRANT ALL ON raw.* TO ${CH_USER}"
+          curl -sf "$CH" --data-binary "GRANT ALL ON staging.* TO ${CH_USER}"
+          curl -sf "$CH" --data-binary "GRANT ALL ON analytics.* TO ${CH_USER}"
+    
+      - name: Verify bootstrap
+        run: |
+          CH="http://localhost:8123/?user=ci_admin&password=ci_password"
+          curl -sf "$CH" --data-binary "SHOW DATABASES"
+          curl -sf "$CH" --data-binary "SHOW TABLES FROM raw"
+
       - name: Smoke test ClickHouse
         run: |
           curl -sf "http://localhost:8123/?user=ci_admin&password=ci_password" \
