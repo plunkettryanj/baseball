@@ -47,7 +47,7 @@ with DAG(
     description="Load Statcast into raw, then build and test staging with dbt",
     default_args=default_args,
     start_date=pendulum.datetime(2026, 9, 28, tz="America/Los_Angeles"),
-    schedule='0 22 * * *',
+    schedule='0 6 * * *',
     catchup=False,
     max_active_runs=1,
     tags=["baseball"],
