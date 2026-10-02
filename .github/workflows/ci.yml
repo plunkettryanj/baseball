@@ -110,3 +110,21 @@ jobs:
       - name: dbt test
         working-directory: dbt/baseball
         run: dbt test --profiles-dir .
+
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install linters
+        run: pip install ruff sqlfluff
+
+      - name: ruff
+        run: ruff check .
+
+      - name: sqlfluff
+        run: sqlfluff lint dbt/baseball/models ddl

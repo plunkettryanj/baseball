@@ -1,0 +1,4 @@
+[sqlfluff]
+dialect = clickhouse
+templater = jinja
+max_line_length = 120
