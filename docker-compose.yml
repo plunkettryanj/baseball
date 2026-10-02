@@ -1,0 +1,87 @@
+x-airflow-common: &airflow-common
+  restart: unless-stopped
+  build:
+    context: .
+    dockerfile: docker/Dockerfile.airflow
+  image: baseball-airflow:2.10.2
+  environment:
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+    AIRFLOW__WEBSERVER__DEFAULT_UI_TIMEZONE: America/Los_Angeles
+    AIRFLOW__CORE__DEFAULT_TIMEZONE: America/Los_Angeles
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    CH_HOST: clickhouse
+    CH_USER: ${CH_USER}
+    CH_PASSWORD: ${CH_PASSWORD}
+    DBT_PROFILES_DIR: /opt/airflow/repo/dbt/baseball
+    ALERT_EMAIL: ${ALERT_EMAIL}
+  volumes:
+    - ./dags:/opt/airflow/dags
+    - ./logs:/opt/airflow/logs
+    - .:/opt/airflow/repo
+
+services:
+  clickhouse:
+    restart: unless-stopped
+    image: clickhouse/clickhouse-server:26.9.5.2
+    container_name: baseball-clickhouse
+    ports:
+      - "8123:8123"   # HTTP interface
+      - "9000:9000"   # native TCP interface (clickhouse-client uses this)
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+
+  postgres:
+    restart: unless-stopped
+    image: postgres:16
+    container_name: baseball-airflow-postgres
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - airflow_postgres_data:/var/lib/postgresql/data
+
+  airflow-init:
+    <<: *airflow-common
+    container_name: baseball-airflow-init
+    depends_on:
+      - postgres
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        airflow db migrate
+        airflow users create \
+          --username admin \
+          --password admin \
+          --firstname Admin \
+          --lastname User \
+          --role Admin \
+          --email admin@example.com
+
+  airflow-webserver:
+    <<: *airflow-common
+    container_name: baseball-airflow-webserver
+    depends_on:
+      - postgres
+      - airflow-init
+    ports:
+      - "8080:8080"
+    command: webserver
+
+  airflow-scheduler:
+    <<: *airflow-common
+    container_name: baseball-airflow-scheduler
+    depends_on:
+      - postgres
+      - airflow-init
+    command: scheduler
+
+volumes:
+  clickhouse_data:
+  airflow_postgres_data:

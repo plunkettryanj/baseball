@@ -61,3 +61,6 @@ fi
 echo "Done. To activate this environment in your current shell run:"
 echo "  source ${VENV_DIR}/Scripts/activate    # Git Bash on Windows"
 echo "Current VIRTUAL_ENV=${VIRTUAL_ENV-}"
+
+
+#temp public key storage age1a738kvppkk73d5flvcyacddmwl5ylusk8z60r0ttd4hxmtckj45qe9mcjm

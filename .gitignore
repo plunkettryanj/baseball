@@ -1,3 +1,7 @@
 3.11.4
 baseball-env
 local
+key.txt
+secrets.yaml
+.env
+/logs

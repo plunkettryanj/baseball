@@ -1,0 +1,8 @@
+version: 2
+models:
+  - name: stg_statcast_pitches
+    columns:
+      - name: pitch_id
+        tests: [not_null, unique]
+      - name: game_pk
+        tests: [not_null]

@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 BASE_URL = "https://statsapi.mlb.com/api/"
 
 ENDPOINTS = {
