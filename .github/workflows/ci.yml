@@ -69,7 +69,18 @@ jobs:
           CH="http://localhost:8123/?user=ci_admin&password=ci_password"
           curl -sS --fail-with-body "$CH" --data-binary "SHOW DATABASES"
           curl -sS --fail-with-body "$CH" --data-binary "SHOW TABLES FROM raw"
-      
+
+      - name: Load fixture data
+        run: |
+          CH="http://localhost:8123/?user=ci_admin&password=ci_password"
+          curl -sS --fail-with-body \
+            "${CH}&query=INSERT%20INTO%20raw.statcast_pitches%20FORMAT%20CSVWithNames" \
+            --data-binary @tests/fixtures/statcast_pitches_sample.csv
+          curl -sS --fail-with-body "$CH" \
+            --data-binary "SELECT count() FROM raw.statcast_pitches"
+          COUNT=$(curl -sS --fail-with-body "$CH" --data-binary "SELECT count() FROM raw.statcast_pitches")
+          test "$COUNT" -ge 1 || { echo "fixture load produced no rows"; exit 1; }
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
