@@ -45,12 +45,6 @@ jobs:
           test -s secrets.yaml
           grep -q '^clickhouse:' secrets.yaml && echo "secrets.yaml decrypted OK"
 
-      - name: Debug file paths
-        run: |
-          pwd
-          ls -la docker/clickhouse ddl || true
-          git ls-files | grep -i '\.sql$'
-
       - name: Create databases and raw table
         run: |
           CH="http://localhost:8123/?user=ci_admin&password=ci_password"
@@ -65,18 +59,13 @@ jobs:
           CH_PASS=$(python3 -c "import yaml;print(yaml.safe_load(open('secrets.yaml'))['clickhouse']['password'])")
           echo "::add-mask::$CH_PASS"
           CH="http://localhost:8123/?user=ci_admin&password=ci_password"
-          curl -sf "$CH" --data-binary "CREATE USER IF NOT EXISTS ${CH_USER} IDENTIFIED BY '${CH_PASS}'"
-          curl -sf "$CH" --data-binary "GRANT ALL ON raw.* TO ${CH_USER}"
-          curl -sf "$CH" --data-binary "GRANT ALL ON staging.* TO ${CH_USER}"
-          curl -sf "$CH" --data-binary "GRANT ALL ON analytics.* TO ${CH_USER}"
-    
+          curl -sS --fail-with-body "$CH" --data-binary "CREATE USER IF NOT EXISTS ${CH_USER} IDENTIFIED BY '${CH_PASS}'"
+          curl -sS --fail-with-body "$CH" --data-binary "GRANT ALL ON raw.* TO ${CH_USER}"
+          curl -sS --fail-with-body "$CH" --data-binary "GRANT ALL ON staging.* TO ${CH_USER}"
+          curl -sS --fail-with-body "$CH" --data-binary "GRANT ALL ON analytics.* TO ${CH_USER}"
+
       - name: Verify bootstrap
         run: |
           CH="http://localhost:8123/?user=ci_admin&password=ci_password"
-          curl -sf "$CH" --data-binary "SHOW DATABASES"
-          curl -sf "$CH" --data-binary "SHOW TABLES FROM raw"
-
-      - name: Smoke test ClickHouse
-        run: |
-          curl -sf "http://localhost:8123/?user=ci_admin&password=ci_password" \
-            --data-binary "SELECT version()"
+          curl -sS --fail-with-body "$CH" --data-binary "SHOW DATABASES"
+          curl -sS --fail-with-body "$CH" --data-binary "SHOW TABLES FROM raw"
