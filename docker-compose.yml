@@ -23,7 +23,7 @@ x-airflow-common: &airflow-common
 services:
   clickhouse:
     restart: unless-stopped
-    image: clickhouse/clickhouse-server:latest
+    image: clickhouse/clickhouse-server:26.9.5.2
     container_name: baseball-clickhouse
     ports:
       - "8123:8123"   # HTTP interface

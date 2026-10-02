@@ -12,7 +12,7 @@ jobs:
 
     services:
       clickhouse:
-        image: clickhouse/clickhouse-server:latest   # pin to the same version as your docker-compose.yml
+        image: clickhouse/clickhouse-server:26.9.5.2
         env:
           CLICKHOUSE_USER: ci_admin
           CLICKHOUSE_PASSWORD: ci_password
@@ -69,3 +69,32 @@ jobs:
           CH="http://localhost:8123/?user=ci_admin&password=ci_password"
           curl -sS --fail-with-body "$CH" --data-binary "SHOW DATABASES"
           curl -sS --fail-with-body "$CH" --data-binary "SHOW TABLES FROM raw"
+            - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dbt
+        run: pip install dbt-clickhouse
+
+      - name: Export ClickHouse credentials for dbt
+        run: |
+          CH_USER=$(sops -d --extract '["clickhouse"]["user"]' secrets.enc.yaml)
+          CH_PASSWORD=$(sops -d --extract '["clickhouse"]["password"]' secrets.enc.yaml)
+          echo "::add-mask::$CH_PASSWORD"
+          echo "CH_HOST=localhost" >> "$GITHUB_ENV"
+          echo "CH_USER=$CH_USER" >> "$GITHUB_ENV"
+          echo "CH_PASSWORD=$CH_PASSWORD" >> "$GITHUB_ENV"
+        env:
+          SOPS_AGE_KEY: ${{ secrets.AGE_KEY }}
+
+      - name: dbt debug
+        working-directory: dbt/baseball
+        run: dbt debug --profiles-dir .
+
+      - name: dbt run
+        working-directory: dbt/baseball
+        run: dbt run --profiles-dir .
+
+      - name: dbt test
+        working-directory: dbt/baseball
+        run: dbt test --profiles-dir .
