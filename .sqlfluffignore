@@ -1,0 +1,3 @@
+ddl/
+dbt/baseball/target/
+dbt/baseball/dbt_packages/
