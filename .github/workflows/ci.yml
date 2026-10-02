@@ -69,7 +69,8 @@ jobs:
           CH="http://localhost:8123/?user=ci_admin&password=ci_password"
           curl -sS --fail-with-body "$CH" --data-binary "SHOW DATABASES"
           curl -sS --fail-with-body "$CH" --data-binary "SHOW TABLES FROM raw"
-            - uses: actions/setup-python@v5
+      
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
