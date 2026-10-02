@@ -9,7 +9,6 @@ this module's only job is fetching data and handing back a DataFrame.
 import logging
 
 from pybaseball import statcast
-import sys
 
 logger = logging.getLogger(__name__)
 
