@@ -12,12 +12,14 @@ then owns validating and writing that data into ClickHouse. api_operations
 stays focused purely on talking to the external source.
 """
 
-import os
 import logging
+import os
 from datetime import date
+
 import clickhouse_connect
-import yaml
 import pandas as pd
+import yaml
+
 from api_operations import fetch_statcast
 
 logger = logging.getLogger(__name__)
